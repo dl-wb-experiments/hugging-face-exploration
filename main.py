@@ -41,8 +41,9 @@ def process_batch(models, start=None, end=None):
     end = end or len(models)
 
     for idx, model in enumerate(models[start:end]):
+        model_idx = idx + start + 1
         if not has_config(model):
-            logging.info(idx + 1, 'No config!!! ', model.modelId)
+            logging.info(f'{model_idx} No config {model.modelId}')
             no_config_models.append(model.modelId)
             continue
 
@@ -54,18 +55,18 @@ def process_batch(models, start=None, end=None):
         try:
             model_type = model.config.model_type.replace("_", "-")
         except AttributeError:
-            logging.info(f'{idx + 1} No type in config {model.modelId}')
+            logging.info(f'{model_idx} No type in config {model.modelId}')
             missed_type.append(model.modelId)
             continue
 
         try:
             FeaturesManager.get_supported_features_for_model_type(model_type, model_name=model.modelId)
         except KeyError:
-            logging.info(f'{idx + 1} Not supported for export {model.modelId}')
+            logging.info(f'{model_idx} Not supported for export {model.modelId}')
             not_exportable_models[model.modelId] = model_type
             continue
 
-        logging.info(f'{idx + 1} Skipping... {model.modelId}')
+        logging.info(f'{model_idx} Skipping... {model.modelId}')
     return no_config_models, not_exportable_models, missed_type
 
 

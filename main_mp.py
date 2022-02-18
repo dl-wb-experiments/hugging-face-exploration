@@ -27,7 +27,7 @@ def main():
         start, end = num * chunk_size, min((num + 1) * chunk_size, total_models)
         ranges.append((start, end))
 
-    ranges = [(0, 10), (11, 22), (23, 100)]
+    # ranges = [(0, 10), (11, 22), (23, 100)]
     result_objects = [pool.apply_async(process_batch, args=(models, start, end)) for start, end in ranges]
 
     results = [r.get() for r in result_objects]
