@@ -239,8 +239,10 @@ def process_single_model(model_name, idx, clean=True):
         logging.info(f'{idx} OpenVINO success with {model_name}!')
         msg = 'success'
 
-    local_report_path = ROOT_PATH / 'reports' / 'small' / new_name / 'report.json'
-    local_report_path.mkdir(exist_ok=True, parents=True)
+    local_report_dir_path = ROOT_PATH / 'reports' / 'small' / new_name
+    local_report_dir_path.mkdir(exist_ok=True, parents=True)
+
+    local_report_path = local_report_dir_path / 'report.json'
     with open(local_report_path) as f:
         json.dump({model_name: msg}, f)
 
