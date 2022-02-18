@@ -177,8 +177,15 @@ def download_convert_model_from_hf(model_name, onnx_path):
 
 
 def clean_resources(hf_model_name, onnx_dir_path, ir_model_dir_path):
-    shutil.rmtree(onnx_dir_path)
-    shutil.rmtree(ir_model_dir_path)
+    try:
+        shutil.rmtree(onnx_dir_path)
+    except OSError:
+        logging.info(f'Unable to remove {onnx_dir_path}')
+
+    try:
+        shutil.rmtree(ir_model_dir_path)
+    except OSError:
+        logging.info(f'Unable to remove {onnx_dir_path}')
 
     path = Path.home() / '.cache' / 'huggingface' / 'transformers'
     model_hash = None
@@ -207,30 +214,37 @@ def process_single_model(model_name, idx, clean=True):
     onnx_dir_path.mkdir(exist_ok=True, parents=True)
     ir_model_path.mkdir(exist_ok=True, parents=True)
 
+    msg = None
     try:
         download_convert_model_from_hf(model_name, onnx_dir_path)
     except ValueError:
         msg = 'Failed to download from Hugging Face'
         logging.info(f'{idx} {msg}')
-        return model_name, msg
 
-    onnx_path = onnx_dir_path / 'model.onnx'
-    try:
-        check_single_model(onnx_path, ir_model_path)
-    except MOConversionError:
-        msg = 'Failed to convert ONNX->IR'
-        logging.info(f'{idx} {msg}')
-        return model_name, msg
-    except BenchmarkError:
-        msg = 'Failed to benchmark IR'
-        logging.info(f'{idx} {msg}')
-        return model_name, msg
+    if not msg:
+        onnx_path = onnx_dir_path / 'model.onnx'
+        try:
+            check_single_model(onnx_path, ir_model_path)
+        except MOConversionError:
+            msg = 'Failed to convert ONNX->IR'
+            logging.info(f'{idx} {msg}')
+        except BenchmarkError:
+            msg = 'Failed to benchmark IR'
+            logging.info(f'{idx} {msg}')
 
     if clean:
         clean_resources(model_name, onnx_dir_path, ir_model_path)
 
-    logging.info(f'{idx} OpenVINO success with {model_name}!')
-    return model_name, 'success'
+    if not msg:
+        logging.info(f'{idx} OpenVINO success with {model_name}!')
+        msg = 'success'
+
+    local_report_path = ROOT_PATH / 'reports' / 'small' / new_name / 'report.json'
+    local_report_path.mkdir(exist_ok=True, parents=True)
+    with open(local_report_path) as f:
+        json.dump({model_name: msg}, f)
+
+    return model_name, msg
 
 
 def get_accepted_models(report_path):
