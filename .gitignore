@@ -9,3 +9,5 @@ onnx
 *.log
 *.out
 logs
+ir_models
+onnx_models

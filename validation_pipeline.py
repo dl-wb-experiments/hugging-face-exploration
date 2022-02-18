@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -9,7 +10,8 @@ from google.protobuf.json_format import MessageToDict
 import onnx
 import onnxruntime as rt
 
-from constants import ROOT_PATH
+from constants import ROOT_PATH, REPORTS_PATH
+from log_config import setup_logging
 
 
 def run_console_tool(tool_path: Path, *args, **kwargs):
@@ -93,8 +95,8 @@ def run_openvino_mo_conversion(onnx_model_path, ir_model_path, inputs):
                })
 
     res_process = run_console_tool(tool_path, env=env)
-    print(f'SUBPROCESS: {str(res_process.stdout.decode("utf-8"))}')
-    print(f'SUBPROCESS: {str(res_process.stderr.decode("utf-8"))}')
+    logging.info(f'SUBPROCESS: {str(res_process.stdout.decode("utf-8"))}')
+    logging.info(f'SUBPROCESS: {str(res_process.stderr.decode("utf-8"))}')
 
     if res_process.returncode != 0:
         raise MOConversionError('Model cannot be converted')
@@ -141,8 +143,8 @@ def run_openvino_inference(ir_model):
                })
 
     res_process = run_console_tool(tool_path, env=env)
-    print(f'SUBPROCESS: {str(res_process.stdout.decode("utf-8"))}')
-    print(f'SUBPROCESS: {str(res_process.stderr.decode("utf-8"))}')
+    logging.info(f'SUBPROCESS: {str(res_process.stdout.decode("utf-8"))}')
+    logging.info(f'SUBPROCESS: {str(res_process.stderr.decode("utf-8"))}')
 
     if res_process.returncode != 0:
         raise BenchmarkError('Model cannot be benchmarked')
@@ -152,16 +154,10 @@ def check_single_model(onnx_path, ir_dir_path):
     inputs = get_onnx_inputs(onnx_path)
     real_inputs = inputs
 
-    try:
-        run_openvino_mo_conversion(onnx_path, ir_dir_path, real_inputs)
-    except MOConversionError:
-        print('Model failed to convert to OpenVINO IR')
+    run_openvino_mo_conversion(onnx_path, ir_dir_path, real_inputs)
 
     ir_model_path = ir_dir_path / 'model.xml'
-    try:
-        run_openvino_inference(ir_model_path)
-    except BenchmarkError:
-        print('Model failed to infer with OpenVINO')
+    run_openvino_inference(ir_model_path)
 
 
 def download_convert_model_from_hf(model_name, onnx_path):
@@ -173,8 +169,8 @@ def download_convert_model_from_hf(model_name, onnx_path):
                })
 
     res_process = run_console_tool(tool_path, env=env)
-    print(f'SUBPROCESS: {str(res_process.stdout.decode("utf-8"))}')
-    print(f'SUBPROCESS: {str(res_process.stderr.decode("utf-8"))}')
+    logging.info(f'SUBPROCESS: {str(res_process.stdout.decode("utf-8"))}')
+    logging.info(f'SUBPROCESS: {str(res_process.stderr.decode("utf-8"))}')
 
     if res_process.returncode != 0:
         raise ValueError('Model cannot be downloaded from HF')
@@ -197,11 +193,13 @@ def clean_resources(hf_model_name, onnx_dir_path, ir_model_dir_path):
         raise ValueError(f'Cannot find a downloaded model {hf_model_name}')
 
     for p in path.rglob(f"{model_hash}*"):
-        print(f'Removing {hf_model_name} model. File: {str(p)}')
+        logging.info(f'Removing {hf_model_name} model. File: {str(p)}')
         p.unlink()
 
 
-def process_single_model(model_name):
+def process_single_model(model_name, idx, clean=True):
+    logging.info(f'{idx} Processing {model_name} ...')
+
     new_name = model_name.replace('/', '_')
 
     onnx_dir_path = ROOT_PATH / 'onnx_models' / new_name
@@ -209,17 +207,92 @@ def process_single_model(model_name):
     onnx_dir_path.mkdir(exist_ok=True, parents=True)
     ir_model_path.mkdir(exist_ok=True, parents=True)
 
-    download_convert_model_from_hf(model_name, onnx_dir_path)
+    try:
+        download_convert_model_from_hf(model_name, onnx_dir_path)
+    except ValueError:
+        msg = 'Failed to download from Hugging Face'
+        logging.info(f'{idx} {msg}')
+        return model_name, msg
 
     onnx_path = onnx_dir_path / 'model.onnx'
-    check_single_model(onnx_path, ir_model_path)
+    try:
+        check_single_model(onnx_path, ir_model_path)
+    except MOConversionError:
+        msg = 'Failed to convert ONNX->IR'
+        logging.info(f'{idx} {msg}')
+        return model_name, msg
+    except BenchmarkError:
+        msg = 'Failed to benchmark IR'
+        logging.info(f'{idx} {msg}')
+        return model_name, msg
 
-    clean_resources(model_name, onnx_dir_path, ir_model_path)
+    if clean:
+        clean_resources(model_name, onnx_dir_path, ir_model_path)
+
+    logging.info(f'{idx} OpenVINO success with {model_name}!')
+    return model_name, 'success'
+
+
+def get_accepted_models(report_path):
+    with open(report_path) as f:
+        content = json.load(f)
+    return content.get('accepted')
+
+
+def print_report(results):
+    success_models = []
+    failed_models = {}
+    for model_name, result in results:
+        if result == 'success':
+            success_models.append(model_name)
+            continue
+        failed_models[model_name] = result
+
+    logging.info(f'Failed models: {len(failed_models)}')
+    for i in failed_models:
+        logging.info(f'\t{i}')
+
+    accepted_models = len(success_models)
+    rejected_models = len(failed_models)
+    total_models = len(success_models) + rejected_models
+
+    logging.info(f'Total found models: {total_models}')
+    logging.info(f'Rejected models: {rejected_models}')
+    logging.info(f'Accepted models: {accepted_models}')
+
+    result_json = {
+        'summary': {
+            'total': total_models,
+            'accepted': accepted_models,
+            'rejected': rejected_models,
+        },
+        'accepted': sorted(success_models),
+        'rejected': {
+            model_id: failed_models[model_id] for model_id in sorted(failed_models.keys())
+        }
+    }
+
+    REPORTS_PATH.mkdir(exist_ok=True)
+    result_report_path = REPORTS_PATH / 'onnx_to_ir_result_report.json'
+
+    with open(result_report_path, 'w') as f:
+        json.dump(result_json, f)
 
 
 def main():
-    model_name = 'prajjwal1/bert-tiny-mnli'
-    process_single_model(model_name)
+    setup_logging(log_filename='onnx_to_openvino.log')
+
+    logging.info('Started')
+
+    report_path = ROOT_PATH / 'reports' / 'hf_to_onnx.json'
+    all_models_names = get_accepted_models(report_path)
+    total_names = len(all_models_names)
+
+    results = []
+    for idx, model_name in enumerate(all_models_names[:2]):
+        results.append(process_single_model(model_name, f'{idx + 1}/{total_names}'))
+
+    print_report(results)
 
 
 if __name__ == '__main__':
