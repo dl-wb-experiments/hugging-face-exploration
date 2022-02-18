@@ -5,4 +5,5 @@ venv
 onnx
 
 *.log
+*.out
 logs
