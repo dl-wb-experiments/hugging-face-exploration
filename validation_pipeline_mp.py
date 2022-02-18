@@ -21,7 +21,7 @@ def main():
     total_names = len(all_models_names)
 
     result_objects = [pool.apply_async(process_single_model, args=(model_name, f'{idx + 1}/{total_names}', True))
-                      for idx, model_name in enumerate(all_models_names[:4])]
+                      for idx, model_name in enumerate(all_models_names)]
     results = [r.get() for r in result_objects]
 
     print_report(results)
