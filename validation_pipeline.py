@@ -243,7 +243,7 @@ def process_single_model(model_name, idx, clean=True):
     local_report_dir_path.mkdir(exist_ok=True, parents=True)
 
     local_report_path = local_report_dir_path / 'report.json'
-    with open(local_report_path) as f:
+    with open(local_report_path, 'w') as f:
         json.dump({model_name: msg}, f)
 
     return model_name, msg
