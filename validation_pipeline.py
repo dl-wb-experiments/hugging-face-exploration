@@ -190,11 +190,14 @@ def clean_resources(hf_model_name, onnx_dir_path, ir_model_dir_path):
     path = Path.home() / '.cache' / 'huggingface' / 'transformers'
     model_hash = None
     for p in path.rglob("*.json"):
-        with open(p) as f:
-            content = json.load(f)
-            if hf_model_name in content.get('url'):
-                model_hash = p.stem
-                break
+        try:
+            with open(p) as f:
+                content = json.load(f)
+                if hf_model_name in content.get('url'):
+                    model_hash = p.stem
+                    break
+        except FileNotFoundError:
+            logging.info(f'Unable to check {p} - it was already removed')
 
     if model_hash is None:
         raise ValueError(f'Cannot find a downloaded model {hf_model_name}')
