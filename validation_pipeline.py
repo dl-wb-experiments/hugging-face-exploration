@@ -216,7 +216,7 @@ def process_single_model(model_name, idx, clean=True):
     if local_report_path.exists():
         logging.info(f'{idx} Already processed model {model_name}. Skipping...')
 
-        with open(local_report_path, 'w') as f:
+        with open(local_report_path) as f:
             content = json.load(f)
             msg = content[model_name]
 
