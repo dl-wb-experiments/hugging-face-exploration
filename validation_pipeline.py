@@ -209,6 +209,19 @@ def process_single_model(model_name, idx, clean=True):
 
     new_name = model_name.replace('/', '_')
 
+    local_report_dir_path = ROOT_PATH / 'reports' / 'small' / new_name
+    local_report_dir_path.mkdir(exist_ok=True, parents=True)
+
+    local_report_path = local_report_dir_path / 'report.json'
+    if local_report_path.exists():
+        logging.info(f'{idx} Already processed model {model_name}. Skipping...')
+
+        with open(local_report_path, 'w') as f:
+            content = json.load(f)
+            msg = content[model_name]
+
+        return model_name, msg
+
     onnx_dir_path = ROOT_PATH / 'onnx_models' / new_name
     ir_model_path = ROOT_PATH / 'ir_models' / new_name
     onnx_dir_path.mkdir(exist_ok=True, parents=True)
@@ -239,10 +252,6 @@ def process_single_model(model_name, idx, clean=True):
         logging.info(f'{idx} OpenVINO success with {model_name}!')
         msg = 'success'
 
-    local_report_dir_path = ROOT_PATH / 'reports' / 'small' / new_name
-    local_report_dir_path.mkdir(exist_ok=True, parents=True)
-
-    local_report_path = local_report_dir_path / 'report.json'
     with open(local_report_path, 'w') as f:
         json.dump({model_name: msg}, f)
 

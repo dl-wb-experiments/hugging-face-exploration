@@ -11,3 +11,5 @@ onnx
 logs
 ir_models
 onnx_models
+
+reports/small
