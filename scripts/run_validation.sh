@@ -1,6 +1,7 @@
 source venv/bin/activate
 
 rm -rf logs
+mkdir -p logs
 
 nohup python -u validation_pipeline_mp.py \
                 > logs/validation_pipeline_mp.log \
