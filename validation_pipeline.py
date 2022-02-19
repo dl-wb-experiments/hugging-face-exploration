@@ -214,13 +214,17 @@ def process_single_model(model_name, idx, clean=True):
 
     local_report_path = local_report_dir_path / 'report.json'
     if local_report_path.exists():
-        logging.info(f'{idx} Already processed model {model_name}. Skipping...')
-
-        with open(local_report_path) as f:
-            content = json.load(f)
-            msg = content[model_name]
-
-        return model_name, msg
+        logging.info(f'{idx} Already processed model {model_name}. Checking report...')
+        try:
+            with open(local_report_path) as f:
+                content = json.load(f)
+                msg = content[model_name]
+        except json.decoder.JSONDecodeError:
+            logging.info(f'{idx} Previous processing report for {model_name} is broken')
+            local_report_path.unlink()
+        else:
+            logging.info(f'{idx} Already processed model {model_name}. Skipping...')
+            return model_name, msg
 
     onnx_dir_path = ROOT_PATH / 'onnx_models' / new_name
     ir_model_path = ROOT_PATH / 'ir_models' / new_name
