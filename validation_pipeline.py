@@ -194,27 +194,28 @@ def clean_resources(hf_model_name, onnx_dir_path, ir_model_dir_path):
         logging.info(f'Unable to remove {onnx_dir_path}')
 
     path = Path.home() / '.cache' / 'huggingface' / 'transformers'
-    model_hash = None
+    model_hashes = []
     for p in path.rglob("*.json"):
         try:
             with open(p) as f:
                 content = json.load(f)
                 if hf_model_name in content.get('url'):
-                    model_hash = p.stem
+                    model_hashes.append(p.stem)
                     break
         except FileNotFoundError:
             logging.info(f'Unable to check {p} - it was already removed')
 
-    if model_hash is None:
+    if not model_hashes:
         logging.info(f'Cannot find a downloaded model {hf_model_name}')
         return
 
-    for p in path.rglob(f"{model_hash}*"):
-        logging.info(f'Removing {hf_model_name} model. File: {str(p)}')
-        try:
-            p.unlink()
-        except FileNotFoundError:
-            logging.info(f'Unable to remove {p} - it was already removed')
+    for model_hash in model_hashes:
+        for p in path.rglob(f"{model_hash}*"):
+            logging.info(f'Removing {hf_model_name} model. File: {str(p)}')
+            try:
+                p.unlink()
+            except FileNotFoundError:
+                logging.info(f'Unable to remove {p} - it was already removed')
 
 
 def process_single_model(model_name, idx, clean=True):
@@ -338,7 +339,7 @@ def main():
     total_names = len(all_models_names)
 
     results = []
-    for idx, model_name in enumerate(all_models_names[:2]):
+    for idx, model_name in enumerate(all_models_names[:1]):
         results.append(process_single_model(model_name, f'{idx + 1}/{total_names}'))
 
     print_report(results)
