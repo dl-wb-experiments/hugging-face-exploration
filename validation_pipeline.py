@@ -226,51 +226,55 @@ def process_single_model(model_name, idx, clean=True):
     local_report_dir_path.mkdir(exist_ok=True, parents=True)
 
     local_report_path = local_report_dir_path / 'report.json'
-    if local_report_path.exists():
-        logging.info(f'{idx} Already processed model {model_name}. Checking report...')
-        try:
-            with open(local_report_path) as f:
-                content = json.load(f)
-                msg = content[model_name]
-        except json.decoder.JSONDecodeError:
-            logging.info(f'{idx} Previous processing report for {model_name} is broken')
-            local_report_path.unlink()
-        else:
-            logging.info(f'{idx} Already processed model {model_name}. Skipping...')
-            return model_name, msg
 
-    onnx_dir_path = ROOT_PATH / 'onnx_models' / new_name
-    ir_model_path = ROOT_PATH / 'ir_models' / new_name
-    onnx_dir_path.mkdir(exist_ok=True, parents=True)
-    ir_model_path.mkdir(exist_ok=True, parents=True)
-
-    msg = None
     try:
-        download_convert_model_from_hf(model_name, onnx_dir_path)
-    except ValueError:
-        msg = 'Failed to download from Hugging Face'
-        logging.info(f'{idx} {msg}')
+        if local_report_path.exists():
+            logging.info(f'{idx} Already processed model {model_name}. Checking report...')
+            try:
+                with open(local_report_path) as f:
+                    content = json.load(f)
+                    msg = content[model_name]
+            except json.decoder.JSONDecodeError:
+                logging.info(f'{idx} Previous processing report for {model_name} is broken')
+                local_report_path.unlink()
+            else:
+                logging.info(f'{idx} Already processed model {model_name}. Skipping...')
+                return model_name, msg
 
-    if not msg:
-        onnx_path = onnx_dir_path / 'model.onnx'
+        onnx_dir_path = ROOT_PATH / 'onnx_models' / new_name
+        ir_model_path = ROOT_PATH / 'ir_models' / new_name
+        onnx_dir_path.mkdir(exist_ok=True, parents=True)
+        ir_model_path.mkdir(exist_ok=True, parents=True)
+
+        msg = None
         try:
-            check_single_model(onnx_path, ir_model_path)
-        except MOConversionError:
-            msg = 'Failed to convert ONNX->IR'
-            logging.info(f'{idx} {msg}')
-        except BenchmarkError:
-            msg = 'Failed to benchmark IR'
-            logging.info(f'{idx} {msg}')
-        except ONNXConversionError:
-            msg = 'Model cannot be converted to ONNX'
+            download_convert_model_from_hf(model_name, onnx_dir_path)
+        except ValueError:
+            msg = 'Failed to download from Hugging Face'
             logging.info(f'{idx} {msg}')
 
-    if clean:
-        clean_resources(model_name, onnx_dir_path, ir_model_path)
+        if not msg:
+            onnx_path = onnx_dir_path / 'model.onnx'
+            try:
+                check_single_model(onnx_path, ir_model_path)
+            except MOConversionError:
+                msg = 'Failed to convert ONNX->IR'
+                logging.info(f'{idx} {msg}')
+            except BenchmarkError:
+                msg = 'Failed to benchmark IR'
+                logging.info(f'{idx} {msg}')
+            except ONNXConversionError:
+                msg = 'Model cannot be converted to ONNX'
+                logging.info(f'{idx} {msg}')
 
-    if not msg:
-        logging.info(f'{idx} OpenVINO success with {model_name}!')
-        msg = 'success'
+        if clean:
+            clean_resources(model_name, onnx_dir_path, ir_model_path)
+
+        if not msg:
+            logging.info(f'{idx} OpenVINO success with {model_name}!')
+            msg = 'success'
+    except:
+        msg = 'general error'
 
     with open(local_report_path, 'w') as f:
         json.dump({model_name: msg}, f)
