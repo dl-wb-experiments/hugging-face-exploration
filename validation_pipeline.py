@@ -204,7 +204,10 @@ def clean_resources(hf_model_name, onnx_dir_path, ir_model_dir_path):
 
     for p in path.rglob(f"{model_hash}*"):
         logging.info(f'Removing {hf_model_name} model. File: {str(p)}')
-        p.unlink()
+        try:
+            p.unlink()
+        except FileNotFoundError:
+            logging.info(f'Unable to remove {p} - it was already removed')
 
 
 def process_single_model(model_name, idx, clean=True):
