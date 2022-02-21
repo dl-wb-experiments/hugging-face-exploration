@@ -201,7 +201,6 @@ def clean_resources(hf_model_name, onnx_dir_path, ir_model_dir_path):
                 content = json.load(f)
                 if hf_model_name in content.get('url'):
                     model_hashes.append(p.stem)
-                    break
         except FileNotFoundError:
             logging.info(f'Unable to check {p} - it was already removed')
 
