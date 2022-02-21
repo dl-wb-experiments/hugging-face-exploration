@@ -135,6 +135,10 @@ class BenchmarkError(Exception):
     pass
 
 
+class ONNXConversionError(Exception):
+    pass
+
+
 def run_openvino_inference(ir_model):
     tool_path = ROOT_PATH / 'scripts' / 'benchmark.sh'
     env = dict(os.environ,
@@ -151,10 +155,12 @@ def run_openvino_inference(ir_model):
 
 
 def check_single_model(onnx_path, ir_dir_path):
-    inputs = get_onnx_inputs(onnx_path)
-    real_inputs = inputs
+    try:
+        inputs = get_onnx_inputs(onnx_path)
+    except FileNotFoundError:
+        raise ONNXConversionError('Model cannot be converted to ONNX')
 
-    run_openvino_mo_conversion(onnx_path, ir_dir_path, real_inputs)
+    run_openvino_mo_conversion(onnx_path, ir_dir_path, inputs)
 
     ir_model_path = ir_dir_path / 'model.xml'
     run_openvino_inference(ir_model_path)
@@ -254,6 +260,9 @@ def process_single_model(model_name, idx, clean=True):
             logging.info(f'{idx} {msg}')
         except BenchmarkError:
             msg = 'Failed to benchmark IR'
+            logging.info(f'{idx} {msg}')
+        except ONNXConversionError:
+            msg = 'Model cannot be converted to ONNX'
             logging.info(f'{idx} {msg}')
 
     if clean:
