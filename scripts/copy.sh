@@ -4,6 +4,7 @@ set -x
 WHERE_TO_KEEP=~/Downloads/new_report/
 #WHAT_TO_KEEP=/root/hugging-face-exploration/logs/onnx_to_openvino_mp.log
 WHAT_TO_KEEP=/root/hugging-face-exploration/reports/cumulative_onnx_to_ir.json
+#WHAT_TO_KEEP=/root/hugging-face-exploration/reports/hf_to_onnx.json
 SERVER_IP=remote-alexander
 
 #rm -rf ${WHERE_TO_KEEP}

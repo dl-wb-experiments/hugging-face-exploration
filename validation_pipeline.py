@@ -314,8 +314,8 @@ def process_single_model(model_name, idx, clean=True):
                 check_single_model(
                     onnx_path, ir_model_path, AutoTokenizer.from_pretrained(model_name)
                 )
-            except ONNXIRToleranceError as e:
-                msg = f"Failed to convert ONNX->IR: {e}"
+            except ONNXIRToleranceError:
+                msg = f"Failed to convert ONNX->IR: Max diff"
             except MOConversionError as e:
                 msg = f'Failed to convert ONNX->IR: {e}'
                 logging.info(f'{idx} {msg}')
@@ -326,7 +326,7 @@ def process_single_model(model_name, idx, clean=True):
                 msg = f'Model cannot be converted to ONNX: {e}'
                 logging.info(f'{idx} {msg}')
             except RuntimeError as e:
-                msg = f'{model_name} OpenVINO Error: {e}'
+                msg = f'OpenVINO Error: {e}'
                 logging.info(f'{idx} {msg}')
             except Exception as e:
                 msg = f'{model_name} Unexpected Exception: {e}'
