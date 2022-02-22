@@ -6,13 +6,18 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import numpy as np
 from google.protobuf.json_format import MessageToDict
 
 import onnx
 import onnxruntime as rt
+from openvino.runtime import Core
+from transformers import AutoTokenizer
 
 from constants import ROOT_PATH, REPORTS_PATH
 from log_config import setup_logging
+
+core = Core()
 
 
 def run_console_tool(tool_path: Path, *args, **kwargs):
@@ -155,7 +160,24 @@ def run_openvino_inference(ir_model):
         raise BenchmarkError('Model cannot be benchmarked')
 
 
-def check_single_model(onnx_path, ir_dir_path):
+def check_logits_is_close(one, other):
+    is_close = np.isclose(one, other, rtol=1e-04, atol=1e-04)  # 1e-04
+    diff = np.abs(one - other)
+    assert np.all(is_close), f"Max diff is {np.max(diff)}"
+
+
+def get_ir_logits(ir_path, tokenized_data):
+    compiled_model = core.compile_model(str(ir_path), device_name="CPU")
+    res = compiled_model.infer_new_request(tokenized_data)
+    return res[compiled_model.output()]
+
+
+def get_onnx_logits(onnx_path, tokenized_data):
+    session = rt.InferenceSession(str(onnx_path))
+    return session.run(None, tokenized_data)[0]
+
+
+def check_single_model(onnx_path, ir_dir_path, tokenizer):
     try:
         inputs = get_onnx_inputs(onnx_path)
     except FileNotFoundError:
@@ -165,6 +187,20 @@ def check_single_model(onnx_path, ir_dir_path):
 
     ir_model_path = ir_dir_path / 'model.xml'
     run_openvino_inference(ir_model_path)
+
+    tokenized_text = tokenizer(
+        "test text, this is a test texts, deal with it!!!",
+        padding=True,
+        truncation=True,
+        pad_to_multiple_of=128,
+        return_tensors="np",
+    )
+    tokenized_text = {name: np.atleast_2d(value) for name, value in tokenized_text.items()}
+
+    ir_logits = get_ir_logits(ir_model_path, tokenized_text)
+    onnx_logits = get_onnx_logits(onnx_path, tokenized_text)
+
+    check_logits_is_close(ir_logits, onnx_logits)
 
 
 def download_convert_model_from_hf(model_name, onnx_path):
@@ -270,15 +306,25 @@ def process_single_model(model_name, idx, clean=True):
         if not msg:
             onnx_path = onnx_dir_path / 'model.onnx'
             try:
-                check_single_model(onnx_path, ir_model_path)
-            except MOConversionError:
-                msg = 'Failed to convert ONNX->IR'
+                check_single_model(
+                    onnx_path, ir_model_path, AutoTokenizer.from_pretrained(model_name)
+                )
+            except AssertionError as e:
+                msg = f"Failed to convert ONNX->IR: {e}"
+            except MOConversionError as e:
+                msg = f'Failed to convert ONNX->IR: {e}'
                 logging.info(f'{idx} {msg}')
             except BenchmarkError:
                 msg = 'Failed to benchmark IR'
                 logging.info(f'{idx} {msg}')
             except ONNXConversionError:
                 msg = 'Model cannot be converted to ONNX'
+                logging.info(f'{idx} {msg}')
+            except RuntimeError as e:
+                msg = f'{model_name} OpenVINO Error: {e}'
+                logging.info(f'{idx} {msg}')
+            except Exception as e:
+                msg = f'{model_name} Unexpected Exception: {e}'
                 logging.info(f'{idx} {msg}')
 
         if clean:
@@ -287,8 +333,8 @@ def process_single_model(model_name, idx, clean=True):
         if not msg:
             logging.info(f'{idx} OpenVINO success with {model_name}!')
             msg = 'success'
-    except:
-        msg = 'general error'
+    except Exception as e:
+        msg = f'General error: {e}'
 
     with open(local_report_path, 'w') as f:
         json.dump({model_name: msg}, f)
@@ -351,9 +397,12 @@ def main():
     all_models_names = get_accepted_models(report_path)
     total_names = len(all_models_names)
 
-    all_models_names = ['Emirhan/51k-finetuned-bert-model', 'Elluran/Hate_speech_detector',
-                        'Emanuel/bertweet-emotion-base',
-                        'Fengkai/distilbert-base-uncased-finetuned-emotion']
+    all_models_names = [
+        'Emirhan/51k-finetuned-bert-model',
+        'Elluran/Hate_speech_detector',
+        'Emanuel/bertweet-emotion-base',
+        'Fengkai/distilbert-base-uncased-finetuned-emotion'
+    ]
 
     results = []
     for idx, model_name in enumerate(all_models_names[:5]):

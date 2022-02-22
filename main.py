@@ -1,23 +1,12 @@
 import logging
 
 import json
-from pathlib import Path
 
-from huggingface_hub import HfApi, ModelSearchArguments, cached_download
-from huggingface_hub import hf_hub_url
-from huggingface_hub.hf_api import ModelInfo
-from huggingface_hub.utils.endpoint_helpers import AttributeDictionary
+from huggingface_hub import HfApi, ModelSearchArguments
 from transformers.onnx import FeaturesManager
 
 from constants import REPORTS_PATH
 from log_config import setup_logging
-
-
-def has_config(model: ModelInfo):
-    for sibling in model.siblings:
-        if sibling.rfilename == 'config.json':
-            return True
-    return False
 
 
 def get_model_candidates_from_hf():
@@ -26,10 +15,21 @@ def get_model_candidates_from_hf():
 
     tags = (
         model_args.pipeline_tag.TextClassification,
-        model_args.library.PyTorch
+        model_args.library.PyTorch,
+        model_args.library.Transformers,
     )
 
-    return api.list_models(filter=tags, limit=10000), tags
+    models = api.list_models(filter=tags, limit=10000, fetch_config=True, full=False)
+
+    filtered_models = [model for model in models if is_transformer_encoder(model)]
+
+    logging.info(
+        f"Fetched {len(models)} models\n"
+        f"Filtered {len(models) - len(filtered_models)}\n"
+        f"# models after filtration: {len(filtered_models)}"
+    )
+
+    return filtered_models, tags
 
 
 def process_batch(models, start=None, end=None):
@@ -42,18 +42,14 @@ def process_batch(models, start=None, end=None):
 
     for idx, model in enumerate(models[start:end]):
         model_idx = idx + start + 1
-        if not has_config(model):
-            logging.info(f'{model_idx} No config {model.modelId}')
+
+        if model.config is None:
             no_config_models.append(model.modelId)
+            logging.info(f'{model_idx} No config {model.modelId}')
             continue
 
-        hf_readme_url = hf_hub_url(repo_id=model.modelId, filename="config.json")
-        readme_path = Path(cached_download(hf_readme_url))
-        with open(readme_path) as f:
-            model.config = AttributeDictionary(json.load(f))
-
         try:
-            model_type = model.config.model_type.replace("_", "-")
+            model_type = model.config["model_type"].replace("_", "-")
         except AttributeError:
             logging.info(f'{model_idx} No type in config {model.modelId}')
             missed_type.append(model.modelId)
@@ -119,7 +115,21 @@ def print_report(no_config_models, not_exportable_models, missed_type, models, t
     result_report_path = REPORTS_PATH / 'result_report.json'
 
     with open(result_report_path, 'w') as f:
-        json.dump(result_json, f)
+        json.dump(result_json, f, indent=4)
+
+
+def is_transformer_encoder(model):
+    supported_model_types = {
+        model_type for model_type, tasks in FeaturesManager._SUPPORTED_MODEL_TYPE.items()
+        if not any("with-past" in task for task in tasks)
+    }
+    return (
+            model.config is not None
+            and "model_type" in model.config
+            and model.config["model_type"] in supported_model_types
+            and "architectures" in model.config
+            and any("SequenceClassification" in arch for arch in model.config["architectures"])
+    )
 
 
 def main():
