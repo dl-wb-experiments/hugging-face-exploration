@@ -30,7 +30,7 @@ def main():
             except KeyError:
                 reasons_summary['hf_download_other'] = 1
         elif hf_error in model_status:
-            key = f'hf_download {model_status[len(hf_error) + 2:len(hf_error) + 2 + 20]}'
+            key = f'hf_download {model_status[len(hf_error) + 2:len(hf_error) + 2 + 120]}'
             try:
                 reasons_summary[key] += 1
             except KeyError:
