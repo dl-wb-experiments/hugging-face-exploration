@@ -2,7 +2,15 @@
     "summary": {
         "total": 4,
         "accepted": 0,
-        "rejected": 4
+        "rejected": {
+            "total": 4,
+            "summary": {
+                "Failed to convert ONNX->IR: Max diff is 0.0015447139739990234": 1,
+                "hf_download Exception: No such file or directory (os error 2)": 1,
+                "hf_download OSError: Can't load tokenizer for 'Emirhan/51k-finetuned-bert-model'": 1,
+                "hf_download onnxruntime.capi.onnxruntime_pybind11_state.InvalidArgument: [ONNXRuntimeError] : 2 : INVALID_ARGUMENT : Invalid Feed In": 1
+            }
+        }
     },
     "accepted": [],
     "rejected": {

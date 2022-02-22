@@ -112,7 +112,7 @@ def print_report(no_config_models, not_exportable_models, missed_type, models, t
     }
 
     REPORTS_PATH.mkdir(exist_ok=True)
-    result_report_path = REPORTS_PATH / 'result_report.json'
+    result_report_path = REPORTS_PATH / 'hf_to_onnx.json'
 
     with open(result_report_path, 'w') as f:
         json.dump(result_json, f, indent=4)
