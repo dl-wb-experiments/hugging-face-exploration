@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -179,7 +180,20 @@ def download_convert_model_from_hf(model_name, onnx_path):
     logging.info(f'SUBPROCESS: {str(res_process.stderr.decode("utf-8"))}')
 
     if res_process.returncode != 0:
-        raise ValueError('Model cannot be downloaded from HF')
+        all_exception_lines = str(res_process.stderr.decode("utf-8")).split('\n')
+        r = re.compile('.*error.*', re.IGNORECASE)
+        exception_lines = list(filter(r.match, all_exception_lines))
+
+        if not exception_lines:
+            msg = 'Model cannot be downloaded from HF'
+        else:
+            line = exception_lines[-1]
+            if 'onnxruntime.' in line:
+                reason = line
+            else:
+                reason = line.split('.')[0]
+            msg = 'Model cannot be downloaded from HF: ' + reason
+        raise ValueError(msg)
 
 
 def clean_resources(hf_model_name, onnx_dir_path, ir_model_dir_path):
@@ -249,8 +263,8 @@ def process_single_model(model_name, idx, clean=True):
         msg = None
         try:
             download_convert_model_from_hf(model_name, onnx_dir_path)
-        except ValueError:
-            msg = 'Failed to download from Hugging Face'
+        except ValueError as e:
+            msg = str(e)
             logging.info(f'{idx} {msg}')
 
         if not msg:
@@ -337,9 +351,13 @@ def main():
     all_models_names = get_accepted_models(report_path)
     total_names = len(all_models_names)
 
+    all_models_names = ['Emirhan/51k-finetuned-bert-model', 'Elluran/Hate_speech_detector',
+                        'Emanuel/bertweet-emotion-base',
+                        'Fengkai/distilbert-base-uncased-finetuned-emotion']
+
     results = []
-    for idx, model_name in enumerate(all_models_names[:1]):
-        results.append(process_single_model(model_name, f'{idx + 1}/{total_names}'))
+    for idx, model_name in enumerate(all_models_names[:5]):
+        results.append(process_single_model(model_name, f'{idx + 1}/{total_names}', clean=False))
 
     print_report(results)
 
