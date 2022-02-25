@@ -1,1 +1,14 @@
-{"summary": {"total": 2, "accepted": 2, "rejected": 0}, "accepted": ["09panesara/distilbert-base-uncased-finetuned-cola", "123abhiALFLKFO/distilbert-base-uncased-finetuned-cola"], "rejected": {}}
+{
+    "summary": {
+        "total": 4,
+        "accepted": 0,
+        "rejected": 4
+    },
+    "accepted": [],
+    "rejected": {
+        "Elluran/Hate_speech_detector": "Failed to convert ONNX->IR: Max diff is 0.0015447139739990234",
+        "Emanuel/bertweet-emotion-base": "Model cannot be downloaded from HF: onnxruntime.capi.onnxruntime_pybind11_state.InvalidArgument: [ONNXRuntimeError] : 2 : INVALID_ARGUMENT : Invalid Feed Input Name:token_type_ids",
+        "Emirhan/51k-finetuned-bert-model": "Model cannot be downloaded from HF: OSError: Can't load tokenizer for 'Emirhan/51k-finetuned-bert-model'",
+        "Fengkai/distilbert-base-uncased-finetuned-emotion": "Model cannot be downloaded from HF: Exception: No such file or directory (os error 2)"
+    }
+}

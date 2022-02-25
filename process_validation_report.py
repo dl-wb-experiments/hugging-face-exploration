@@ -60,7 +60,7 @@ def main():
         }
     }
     with open(final_report, 'w') as f:
-        json.dump(report_content, f)
+        json.dump(report_content, f, indent=4)
 
 
 if __name__ == '__main__':

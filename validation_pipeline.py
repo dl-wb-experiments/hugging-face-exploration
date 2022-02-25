@@ -160,10 +160,15 @@ def run_openvino_inference(ir_model):
         raise BenchmarkError('Model cannot be benchmarked')
 
 
+class ONNXIRToleranceError(Exception):
+    pass
+
+
 def check_logits_is_close(one, other):
     is_close = np.isclose(one, other, rtol=1e-04, atol=1e-04)  # 1e-04
     diff = np.abs(one - other)
-    assert np.all(is_close), f"Max diff is {np.max(diff)}"
+    if not np.all(is_close):
+        raise ONNXIRToleranceError(f"Max diff is {np.max(diff)}")
 
 
 def get_ir_logits(ir_path, tokenized_data):
@@ -309,19 +314,19 @@ def process_single_model(model_name, idx, clean=True):
                 check_single_model(
                     onnx_path, ir_model_path, AutoTokenizer.from_pretrained(model_name)
                 )
-            except AssertionError as e:
-                msg = f"Failed to convert ONNX->IR: {e}"
+            except ONNXIRToleranceError:
+                msg = f"Failed to convert ONNX->IR: Max diff"
             except MOConversionError as e:
                 msg = f'Failed to convert ONNX->IR: {e}'
                 logging.info(f'{idx} {msg}')
-            except BenchmarkError:
-                msg = 'Failed to benchmark IR'
+            except BenchmarkError as e:
+                msg = f'Failed to benchmark IR: {e}'
                 logging.info(f'{idx} {msg}')
-            except ONNXConversionError:
-                msg = 'Model cannot be converted to ONNX'
+            except ONNXConversionError as e:
+                msg = f'Model cannot be converted to ONNX: {e}'
                 logging.info(f'{idx} {msg}')
             except RuntimeError as e:
-                msg = f'{model_name} OpenVINO Error: {e}'
+                msg = f'OpenVINO Error: {e}'
                 logging.info(f'{idx} {msg}')
             except Exception as e:
                 msg = f'{model_name} Unexpected Exception: {e}'
@@ -337,7 +342,7 @@ def process_single_model(model_name, idx, clean=True):
         msg = f'General error: {e}'
 
     with open(local_report_path, 'w') as f:
-        json.dump({model_name: msg}, f)
+        json.dump({model_name: msg}, f, indent=4)
 
     return model_name, msg
 
@@ -385,7 +390,7 @@ def print_report(results):
     result_report_path = REPORTS_PATH / 'onnx_to_ir_result_report.json'
 
     with open(result_report_path, 'w') as f:
-        json.dump(result_json, f)
+        json.dump(result_json, f, indent=4)
 
 
 def main():

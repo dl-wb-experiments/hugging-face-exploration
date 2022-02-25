@@ -23,11 +23,9 @@ def get_model_candidates_from_hf():
 
     filtered_models = [model for model in models if is_transformer_encoder(model)]
 
-    logging.info(
-        f"Fetched {len(models)} models\n"
-        f"Filtered {len(models) - len(filtered_models)}\n"
-        f"# models after filtration: {len(filtered_models)}"
-    )
+    logging.info(f"Fetched {len(models)} models")
+    logging.info(f"Filtered {len(models) - len(filtered_models)}")
+    logging.info(f"No. of models after filtering: {len(filtered_models)}")
 
     return filtered_models, tags
 
@@ -62,7 +60,7 @@ def process_batch(models, start=None, end=None):
             not_exportable_models[model.modelId] = model_type
             continue
 
-        logging.info(f'{model_idx} Skipping... {model.modelId}')
+        logging.info(f'{model_idx} Accepting {model.modelId}')
     return no_config_models, not_exportable_models, missed_type
 
 
@@ -112,7 +110,7 @@ def print_report(no_config_models, not_exportable_models, missed_type, models, t
     }
 
     REPORTS_PATH.mkdir(exist_ok=True)
-    result_report_path = REPORTS_PATH / 'result_report.json'
+    result_report_path = REPORTS_PATH / 'hf_to_onnx.json'
 
     with open(result_report_path, 'w') as f:
         json.dump(result_json, f, indent=4)
