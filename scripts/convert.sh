@@ -10,7 +10,7 @@ source venv/bin/activate
 #OUTPUT_MODEL=./ir_model
 
 python -m openvino.tools.mo \
-    --data_type 'FP16' \
+    --data_type 'FP32' \
     --input ${INPUT_NAMES} \
     --input_shape ${INPUT_SHAPES} \
     --input_model ${INPUT_MODEL} \

@@ -20,6 +20,7 @@ def get_model_candidates_from_hf():
     )
 
     models = api.list_models(filter=tags, limit=10000, fetch_config=True, full=False)
+    logging.info(f'Total found models: {len(models)}')
 
     filtered_models = [model for model in models if is_transformer_encoder(model)]
 
@@ -137,7 +138,7 @@ def main():
 
     models, tags = get_model_candidates_from_hf()
 
-    no_config_models, not_exportable_models, missed_type = process_batch(models, end=26)
+    no_config_models, not_exportable_models, missed_type = process_batch(models, end=None)
 
     print_report(no_config_models, not_exportable_models, missed_type, models, tags)
 
