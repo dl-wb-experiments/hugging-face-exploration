@@ -21,3 +21,8 @@ To run the code:
    ```bash
    python process_validation_report.py
    ```
+   
+1. Get summary of all errors:
+   ```bash
+   python rejected_report.py
+   ```
