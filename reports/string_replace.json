@@ -1,0 +1,46 @@
+{
+  "in": {
+    "Truncation and padding": "After Benchmark. Change tokenizer settings for atol check",
+    "OpenVINO Error: output()": "After Benchmark. More than 1 output in the IR model",
+    "0INTERNAL ASSERT FAILED": "ONNX Convert. Pytorch jit trace error",
+    "onnxruntime.capi.onnxruntime_pybind11_state.InvalidArgument": "ONNX Convert. Wrong tokenizer type in the repo",
+    "Model cannot be downloaded from HF: TypeError: not a string": "ONNX Convert. Failed to load tokenizer",
+    "Error(s) in loading state_dict": "ONNX Convert. Mismatch of the config and actual weights of the model",
+    "TypeError: sequence item 0: expected str instance": "ONNX Convert. Failed to load tokenizer",
+    "TypeError: expected str, bytes or os": "ONNX Convert. Failed to load tokenizer",
+    "TypeError: stat: path should be string, bytes, os": "ONNX Convert. Failed to load tokenizer",
+    "ValueError: The state dictionary of the model you are training to load is corrupted": "ONNX Convert. Bad model file in the repo",
+    "Failed to convert ONNX->IR: Max diff": "After Benchmark. atol check failed",
+    "No such file or directory (os error 2)": "ONNX Convert. Not enough files for tokenizer in the repo",
+    "Unable to load vocabulary from file": "ONNX Convert. Not enough files for tokenizer in the repo",
+    "OSError: Can't load tokenizer for": "ONNX Convert. Not enough files for tokenizer in the repo",
+    "/root/hugging-face-exploration/venv/lib/python3": "unknown",
+    "Exporting model exceed maximum protobuf size of 2GB": "ONNX Convert. Model file is > 2GB",
+    "Connection error, and we cannot find": "unknown",
+    "You need to install fugashi": "ONNX Convert. ModuleNotFoundError: You need to install fugashi",
+    "Non-zero status code returned while running Gather node": "ONNX Convert. Token idx out of range",
+    "Model and config inputs doesn't match": "ONNX Convert. Model and config inputs doesn't match",
+    "ValueError: Wrong index found for [MASK]": "ONNX Convert. Wrong tokenizer type in the repo"
+  },
+  "eq": {
+    "Model cannot be converted to ONNX: Model cannot be converted to ONNX": "ONNX Convert. Model file is > 2GB",
+    "Model cannot be downloaded from HF": "unknown",
+    "Model cannot be downloaded from HF: json": "ONNX Convert. Corrupted json file in the repository",
+    "Failed to convert ONNX->IR: Model cannot be converted": "IR Convert. MO conversion error"
+  },
+  "swap": {
+    "wukevin/tcr-bert": "IR Convert. Internal shapes mismatch",
+    "aloxatel/QHR": "success",
+    "yabramuvdi/distilbert-wfh": "ONNX Convert. Not enough files for tokenizer in the repo",
+    "DeepPavlov/xlm-roberta-large-en-ru-mnli": "After Benchmark. atol check failed",
+    "EhsanAghazadeh/bert-large-uncased-CoLA_A": "After Benchmark. atol check failed",
+    "EhsanAghazadeh/bert-large-uncased-CoLA_B": "After Benchmark. atol check failed",
+    "Giannipinelli/xlm-roberta-base-finetuned-marc-en": "After Benchmark. atol check failed",
+    "Manishl7/xlm-roberta-large-language-detection": "After Benchmark. atol check failed",
+    "NbAiLab/nb-bert-base-samisk": "After Benchmark. atol check failed",
+    "beomi/beep-kcbert-base-bias": "After Benchmark. atol check failed",
+    "sismetanin/xlm_roberta_base-ru-sentiment-rureviews": "After Benchmark. atol check failed",
+    "sismetanin/xlm_roberta_base-ru-sentiment-sentirueval2016": "After Benchmark. atol check failed",
+    "vicgalle/xlm-roberta-large-xnli-anli": "After Benchmark. atol check failed"
+  }
+}

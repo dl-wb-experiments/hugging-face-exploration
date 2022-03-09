@@ -198,6 +198,7 @@ def check_single_model(onnx_path, ir_dir_path, tokenizer):
         padding=True,
         truncation=True,
         pad_to_multiple_of=128,
+        max_length=128,
         return_tensors="np",
     )
     tokenized_text = {name: np.atleast_2d(value) for name, value in tokenized_text.items()}
