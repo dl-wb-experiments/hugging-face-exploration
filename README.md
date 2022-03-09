@@ -16,6 +16,11 @@ To run the code:
    ```bash
    bash scripts/run_validation.sh
    ```
+
+1. Activate the environment:
+   ```bash
+   source venv/bin/activate
+   ```
    
 1. To monitor validation progress, or once previous step finishes, collect final validation report:
    ```bash
