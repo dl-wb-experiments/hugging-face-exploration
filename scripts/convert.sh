@@ -17,5 +17,4 @@ python -m openvino.tools.mo \
     --model_name 'model' \
     --framework 'onnx' \
     --output_dir ${OUTPUT_MODEL} \
-    --progress \
     --layout ${INPUT_LAYOUTS}

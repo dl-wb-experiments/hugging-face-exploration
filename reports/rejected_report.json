@@ -3,8 +3,7 @@
     "ONNX Convert. Model and config inputs doesn't match": 1,
     "ONNX Convert. Not enough files for tokenizer in the repo": 360,
     "After Benchmark. More than 1 output in the IR model": 16,
-    "unknown": 134,
-    "After Benchmark. atol check failed": 4,
+    "unknown": 138,
     "ONNX Convert. Model file is > 2GB": 9,
     "ONNX Convert. Token idx out of range": 2,
     "Model cannot be downloaded from HF: ValueError: Can't find a vocabulary file at path '/root/": 2,
@@ -20,5 +19,5 @@
     "ONNX Convert. Corrupted json file in the repository": 1,
     "Model cannot be downloaded from HF: OSError: Unable to load weights from pytorch checkpoint file for 'ndubuisi/pfam_init' at '/root/": 1,
     "Model cannot be downloaded from HF: OSError: We couldn't connect to 'https://huggingface": 1,
-    "IR Convert. Internal shapes mismatch": 1
+    "IR Convert. MO conversion error": 1
 }

@@ -1,11 +1,13 @@
 import json
 from collections import Counter
 
+from constants import REPORTS_PATH
+
 
 def process_results():
-    with open("reports/cumulative_onnx_to_ir.json") as f:
+    with open(REPORTS_PATH / "cumulative_onnx_to_ir.json") as f:
         stat = json.load(f)
-    with open("reports/string_replace.json") as f:
+    with open(REPORTS_PATH / "string_replace.json") as f:
         replacements = json.load(f)
 
     results = []
@@ -40,7 +42,7 @@ def process_results():
 
 def main():
     report = process_results()
-    with open("rejected_report.json", "w") as f:
+    with open(REPORTS_PATH / "rejected_report.json", "w") as f:
         json.dump(report, f, indent=4)
 
 
